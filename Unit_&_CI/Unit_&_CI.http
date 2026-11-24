@@ -1,0 +1,6 @@
+@Unit___CI_HostAddress = http://localhost:5113
+
+GET {{Unit___CI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
