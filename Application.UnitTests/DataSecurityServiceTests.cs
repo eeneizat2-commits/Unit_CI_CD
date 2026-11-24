@@ -12,7 +12,7 @@ public class DataSecurityServiceTests
         // Arrange
         var roleIds = new List<int> { 1, 2 };
 
-        var repositoryData = new List<DataSecurity>
+        var repositoryData = new List<>
         {
             new()
             {
