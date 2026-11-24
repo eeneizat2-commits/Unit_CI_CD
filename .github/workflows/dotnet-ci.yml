@@ -5,7 +5,6 @@ on:
   push:
     branches: [ "master" ]
 
-
   workflow_dispatch:
 
 jobs:
@@ -29,3 +28,13 @@ jobs:
 
       - name: Run Unit Tests
         run: dotnet test --no-build --configuration Release --verbosity normal
+
+      - name: Publish
+        run: dotnet publish "Unit_&_CI/Api.csproj" --configuration Release --output ./publish
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-api-build
+          path: ./publish
+          retention-days: 7
