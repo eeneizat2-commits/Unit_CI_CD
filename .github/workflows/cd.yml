@@ -37,7 +37,7 @@ jobs:
           echo "DEV: Artifact verified."
 
       - name: Simulate DEV Deployment
-        run: echo "DEV: Simulating application deployment..."
+        run: 'echo "DEV: Simulating application deployment..."'
 
   dev-smoke-test:
     name: DEV - Smoke Tests
@@ -46,7 +46,7 @@ jobs:
 
     steps:
       - name: Run DEV Smoke Tests
-        run: echo "DEV: Smoke tests passed."
+        run: 'echo "DEV: Smoke tests passed."'
 
   # =========================
   # QA
@@ -72,7 +72,7 @@ jobs:
           echo "QA: Artifact verified."
 
       - name: Simulate QA Deployment
-        run: echo "QA: Simulating application deployment..."
+        run: 'echo "QA: Simulating QA deployment..."'
 
   qa-acceptance-tests:
     name: QA - Acceptance Tests
@@ -81,7 +81,7 @@ jobs:
 
     steps:
       - name: Run QA Acceptance Tests
-        run: echo "QA: Acceptance tests passed."
+        run: 'echo "QA: Acceptance tests passed."'
 
   # =========================
   # PROD
@@ -107,7 +107,7 @@ jobs:
           echo "PROD: Artifact verified."
 
       - name: Simulate Production Deployment
-        run: echo "PROD: Simulating production deployment..."
+        run: 'echo "PROD: Simulating production deployment..."'
 
   prod-verification:
     name: PROD - Verification
@@ -116,4 +116,4 @@ jobs:
 
     steps:
       - name: Verify Production
-        run: echo "PROD: Production verification passed."
+        run: 'echo "PROD: Production verification passed."'
