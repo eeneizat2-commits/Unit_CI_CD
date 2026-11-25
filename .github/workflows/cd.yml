@@ -1,0 +1,119 @@
+
+name: .NET CD
+
+on:
+  workflow_run:
+    workflows: [".NET CI"]
+    types: [completed]
+    branches: ["master"]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+
+  # =========================
+  # DEV
+  # =========================
+
+  dev-deploy:
+    name: DEV - Deploy
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download CI Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-api-build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./publish
+
+      - name: Verify Artifact
+        run: |
+          test -n "$(find ./publish -type f -print -quit)"
+          echo "DEV: Artifact verified."
+
+      - name: Simulate DEV Deployment
+        run: 'echo "DEV: Simulating application deployment..."'
+
+  dev-smoke-test:
+    name: DEV - Smoke Tests
+    runs-on: ubuntu-latest
+    needs: dev-deploy
+
+    steps:
+      - name: Run DEV Smoke Tests
+        run: 'echo "DEV: Smoke tests passed."'
+
+  # =========================
+  # QA
+  # =========================
+
+  qa-deploy:
+    name: QA - Deploy
+    runs-on: ubuntu-latest
+    needs: dev-smoke-test
+
+    steps:
+      - name: Download CI Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-api-build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./publish
+
+      - name: Verify Artifact
+        run: |
+          test -n "$(find ./publish -type f -print -quit)"
+          echo "QA: Artifact verified."
+
+      - name: Simulate QA Deployment
+        run: 'echo "QA: Simulating QA deployment..."'
+
+  qa-acceptance-tests:
+    name: QA - Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: qa-deploy
+
+    steps:
+      - name: Run QA Acceptance Tests
+        run: 'echo "QA: Acceptance tests passed."'
+
+  # =========================
+  # PROD
+  # =========================
+
+  prod-deploy:
+    name: PROD - Deploy
+    runs-on: ubuntu-latest
+    needs: qa-acceptance-tests
+
+    steps:
+      - name: Download CI Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-api-build
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ./publish
+
+      - name: Verify Artifact
+        run: |
+          test -n "$(find ./publish -type f -print -quit)"
+          echo "PROD: Artifact verified."
+
+      - name: Simulate Production Deployment
+        run: 'echo "PROD: Simulating production deployment..."'
+
+  prod-verification:
+    name: PROD - Verification
+    runs-on: ubuntu-latest
+    needs: prod-deploy
+
+    steps:
+      - name: Verify Production
+        run: 'echo "PROD: Production verification passed."'
