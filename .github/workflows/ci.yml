@@ -1,114 +1,71 @@
 
-name: .NET CD - Manual Promotion
+name: .NET CI
 
 on:
-  workflow_run:
-    workflows: [".NET CI"]
-    types: [completed]
+  push:
     branches: ["master"]
 
-permissions:
-  actions: read
-  contents: read
+  workflow_dispatch:
 
 jobs:
-
-  # =========================
-  # DEV
-  # =========================
-
-  dev:
-    name: DEV - Deploy and Test
-    if: github.event.workflow_run.conclusion == 'success'
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download CI Artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          name: dotnet-api-build
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./publish
+          dotnet-version: '9.0.x'
 
-      - name: Verify Artifact
-        run: |
-          test -n "$(find ./publish -type f -print -quit)"
-          echo "DEV: Artifact verified."
+      - name: Restore dependencies
+        run: dotnet restore
 
-      # Customize DEV tasks here
-      - name: DEV - Deployment
-        run: |
-          echo "DEV: Add deployment commands here."
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
 
-      - name: DEV - Smoke Tests
-        run: |
-          echo "DEV: Add smoke tests here."
-
-  # =========================
-  # QA
-  # =========================
-
-  qa:
-    name: QA - Deploy and Test
-    needs: dev
+  test:
+    name: Unit Tests
     runs-on: ubuntu-latest
-    environment:
-      name: qa
 
     steps:
-      - name: Download CI Artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
         with:
-          name: dotnet-api-build
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./publish
+          dotnet-version: '9.0.x'
 
-      - name: Verify Artifact
-        run: |
-          test -n "$(find ./publish -type f -print -quit)"
-          echo "QA: Artifact verified."
+      - name: Restore dependencies
+        run: dotnet restore
 
-      # Customize QA tasks here
-      - name: QA - Deployment
-        run: |
-          echo "QA: Add deployment commands here."
+      - name: Run Unit Tests
+        run: dotnet test --configuration Release --verbosity normal
 
-      - name: QA - Acceptance Tests
-        run: |
-          echo "QA: Add acceptance tests here."
-
-  # =========================
-  # PRODUCTION
-  # =========================
-
-  prod:
-    name: PROD - Deploy and Verify
-    needs: qa
+  publish:
+    name: Publish Artifact
     runs-on: ubuntu-latest
-    environment:
-      name: production
+    needs: [build, test]
 
     steps:
-      - name: Download CI Artifact
-        uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Publish API
+        run: dotnet publish "Unit_&_CI/Api.csproj" --configuration Release --output ./publish
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: dotnet-api-build
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ./publish
-
-      - name: Verify Artifact
-        run: |
-          test -n "$(find ./publish -type f -print -quit)"
-          echo "PROD: Artifact verified."
-
-      # Customize production tasks here
-      - name: PROD - Deployment
-        run: |
-          echo "PROD: Add production deployment commands here."
-
-      - name: PROD - Verification
-        run: |
-          echo "PROD: Add production verification commands here."
+          retention-days: 7
