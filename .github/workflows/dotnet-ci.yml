@@ -8,7 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-test:
+  build:
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -26,9 +27,6 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run Unit Tests
-        run: dotnet test --no-build --configuration Release --verbosity normal
-
       - name: Publish
         run: dotnet publish "Unit_&_CI/Api.csproj" --configuration Release --output ./publish
 
@@ -38,3 +36,39 @@ jobs:
           name: dotnet-api-build
           path: ./publish
           retention-days: 7
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Run Unit Tests
+        run: dotnet test --configuration Release --verbosity normal
+
+  verify-artifact:
+    name: Verify Artifact
+    runs-on: ubuntu-latest
+    needs: [build, test]
+
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dotnet-api-build
+          path: ./publish
+
+      - name: Verify published files
+        run: |
+          test -n "$(find ./publish -type f -print -quit)"
+          echo "Artifact downloaded and verified successfully."
